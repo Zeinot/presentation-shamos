@@ -1,0 +1,2593 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Algorithme de Shamos - Paire de Points la Plus Proche</title>
+
+    <!-- reveal.js CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reset.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reveal.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/theme/black.css"
+    />
+
+    <!-- Code highlighting -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/highlight/monokai.css"
+    />
+
+    <style>
+      /* shadcn-inspired color scheme */
+      :root {
+        --radius: 0.625rem;
+        --background: #09090b;
+        --foreground: #fafafa;
+        --card: #18181b;
+        --card-foreground: #fafafa;
+        --primary: #fafafa;
+        --primary-foreground: #18181b;
+        --secondary: #27272a;
+        --secondary-foreground: #fafafa;
+        --muted: #27272a;
+        --muted-foreground: #a1a1aa;
+        --accent: #27272a;
+        --accent-foreground: #fafafa;
+        --border: #27272a;
+        --input: #27272a;
+        --ring: #52525b;
+      }
+
+      .reveal {
+        background: var(--background);
+        font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--foreground);
+      }
+
+      .reveal h1,
+      .reveal h2,
+      .reveal h3 {
+        text-transform: none;
+        font-weight: 600;
+        color: var(--foreground);
+      }
+
+      .reveal h1 {
+        font-size: 2.5em;
+        background: linear-gradient(
+          to right,
+          var(--foreground) 0%,
+          var(--muted-foreground) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .reveal h2 {
+        color: var(--foreground);
+        font-size: 1.5em;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+
+      .reveal section {
+        text-align: left;
+      }
+
+      .reveal .title-slide {
+        text-align: center;
+      }
+
+      .reveal .slides {
+        text-align: left;
+      }
+
+      .reveal .slides > section,
+      .reveal .slides > section > section {
+        height: 100%;
+        max-height: 100vh;
+        padding: 30px 35px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        gap: 15px;
+      }
+
+      /* Custom scrollbar styling */
+      .reveal .slides > section::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .reveal .slides > section::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .reveal .slides > section::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+      }
+
+      .reveal .slides > section::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .reveal .slides > section.title-slide {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .reveal h2 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        line-height: 1.1;
+      }
+
+      .reveal h3 {
+        font-size: 1.05em;
+        margin-top: 8px;
+        margin-bottom: 6px;
+      }
+
+      .reveal p,
+      .reveal ul,
+      .reveal ol {
+        margin-top: 6px;
+        margin-bottom: 6px;
+        font-size: 0.72em;
+        line-height: 1.4;
+      }
+
+      .reveal li {
+        margin-bottom: 4px;
+      }
+
+      .reveal pre {
+        margin: 6px 0;
+        font-size: 0.4em;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .reveal code {
+        font-size: 1em;
+        line-height: 1.15;
+      }
+
+      .highlight-box {
+        background: var(--card);
+        border-left: 3px solid var(--primary);
+        padding: 10px 12px;
+        margin: 8px 0;
+        border-radius: var(--radius);
+        font-size: 0.82em;
+        border: 1px solid var(--border);
+      }
+
+      .complexity {
+        background: var(--secondary);
+        padding: 8px 15px;
+        border-radius: var(--radius);
+        display: inline-block;
+        font-size: 0.95em;
+        font-weight: bold;
+        margin: 10px 0;
+        border: 1px solid var(--border);
+      }
+
+      .step-list {
+        counter-reset: step-counter;
+        list-style: none;
+        padding-left: 0;
+        font-size: 0.8em;
+      }
+
+      .step-list li {
+        counter-increment: step-counter;
+        margin-bottom: 12px;
+        padding-left: 40px;
+        position: relative;
+        line-height: 1.4;
+      }
+
+      .step-list li::before {
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 1;
+        background: var(--primary);
+        color: var(--primary-foreground);
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9em;
+        border: 1px solid var(--border);
+      }
+
+      .two-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        align-items: start;
+      }
+
+      .advantage {
+        color: #22c55e;
+        font-weight: 600;
+      }
+
+      .disadvantage {
+        color: #ef4444;
+        font-weight: 600;
+      }
+
+      .visual-diagram {
+        background: var(--card);
+        padding: 15px;
+        border-radius: var(--radius);
+        text-align: center;
+        margin: 12px 0;
+        font-size: 0.85em;
+        border: 1px solid var(--border);
+      }
+
+      code {
+        background: var(--muted);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        color: var(--foreground);
+      }
+
+      .author-info {
+        margin-top: 30px;
+        font-size: 0.85em;
+        color: var(--muted-foreground);
+      }
+
+      .fragment.highlight-current-blue.visible.current-fragment {
+        color: var(--primary);
+      }
+
+      .comparison-table {
+        width: 100%;
+        margin: 20px 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+
+      .comparison-table th {
+        background: var(--secondary);
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .comparison-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .algorithm-name {
+        font-size: 1.1em;
+        color: var(--foreground);
+        font-weight: 600;
+      }
+
+      pre {
+        background: var(--card) !important;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+
+      .reveal pre code {
+        background: transparent;
+        max-height: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- Slide 1: Titre -->
+        <section class="title-slide">
+          <h1 style="margin-top: 100px">Algorithme de Shamos</h1>
+          <h3>Paire de Points la Plus Proche</h3>
+          <p style="margin-top: 60px; font-size: 1.2em">
+            Une approche « Diviser pour Régner » efficace
+          </p>
+          <div class="author-info">
+            <p><strong>Présenté par :</strong> Omar Sarsar</p>
+            <p><strong>Cours :</strong> Algorithmes et Structures de Données</p>
+          </div>
+        </section>
+
+        <!-- Slide 2: Introduction au problème -->
+        <section>
+          <h2>🎯 Le Problème - En termes simples</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1.1em">
+              <strong>Imaginez :</strong> Vous avez plusieurs points dispersés
+              sur une feuille de papier.
+            </p>
+            <p style="margin-top: 10px">
+              <strong>Question :</strong> Quels sont les DEUX points les plus
+              proches l'un de l'autre ?
+            </p>
+          </div>
+
+          <div style="font-size: 0.9em; line-height: 1.8">
+            <p><strong>🌍 Exemple concret de la vie réelle :</strong></p>
+            <div style="margin-left: 15px; margin-top: 10px">
+              <p>• Vous avez une carte avec plusieurs villes du Maroc</p>
+              <p style="margin-top: 8px">
+                • Vous voulez savoir quelles sont les deux villes les plus
+                proches
+              </p>
+              <p style="margin-top: 8px">• C'est exactement ce problème !</p>
+            </div>
+          </div>
+
+          <div
+            style="
+              background: var(--card);
+              padding: 12px;
+              border-radius: var(--radius);
+              border: 1px solid var(--border);
+            "
+          >
+            <p><strong>📐 Comment mesurer la distance ?</strong></p>
+            <p style="margin-top: 8px; font-size: 0.85em">
+              On utilise la <strong>distance en ligne droite</strong> (comme
+              avec une règle) :
+            </p>
+            <div
+              style="
+                margin-top: 8px;
+                background: var(--muted);
+                padding: 8px;
+                border-radius: 6px;
+              "
+            >
+              <p style="text-align: center; font-size: 0.95em">
+                distance = √[(différence en X)² + (différence en Y)²]
+              </p>
+            </div>
+            <p
+              style="
+                font-size: 0.8em;
+                margin-top: 8px;
+                color: var(--muted-foreground);
+              "
+            >
+              💡 C'est le <strong>théorème de Pythagore</strong> que vous avez
+              appris au collège !
+            </p>
+          </div>
+
+          <div class="visual-diagram">
+            <p style="font-size: 1.3em">📍 📍 📍 📍 📍 📍 📍 📍</p>
+            <p style="margin-top: 10px; font-size: 0.9em">
+              Imaginez que chaque 📍 est une ville marocaine sur une carte
+            </p>
+            <p style="color: #22c55e; margin-top: 8px">
+              ➡️ Notre mission : Trouver les deux villes les plus proches !
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 3: Pourquoi c'est important -->
+        <section>
+          <h2>💡 Pourquoi c'est utile dans la vraie vie ?</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>Ce n'est pas juste un exercice scolaire !</strong>
+            </p>
+            <p style="margin-top: 10px">
+              Ce problème est utilisé tous les jours dans des applications que
+              vous connaissez
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em; line-height: 1.8">
+            <div
+              style="
+                background: var(--card);
+                padding: 12px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p><strong>🎮 Dans les Jeux Vidéo :</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                Quand vous jouez à un jeu, il faut détecter si deux personnages
+                se touchent.<br />
+                → Le jeu doit vérifier en permanence : "Est-ce que Mario touche
+                cet ennemi ?"
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 12px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p><strong>📱 Sur votre Téléphone (GPS) :</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                Quand vous cherchez "café" sur Google Maps à Casablanca, votre
+                téléphone trouve les lieux les plus proches de vous.<br />
+                → Il doit comparer votre position avec des milliers de lieux
+                rapidement !
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 12px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p><strong>✈️ Pour la Sécurité des Avions :</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                Les systèmes de contrôle aérien vérifient si deux avions sont
+                trop proches au-dessus de l'aéroport de Rabat-Salé.<br />
+                → Besoin de calculs ultra-rapides pour la sécurité !
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 12px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+              "
+            >
+              <p>
+                <strong>🛒 Dans le E-commerce (Jumia, Amazon, etc.) :</strong>
+              </p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                "Les clients qui ont acheté X ont aussi acheté Y" → il faut
+                trouver les clients "similaires".<br />
+                → On cherche les clients les plus "proches" en termes de
+                comportement d'achat
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--muted);
+              padding: 15px;
+              border-radius: var(--radius);
+            "
+          >
+            <p style="font-weight: bold">💭 Le point commun ?</p>
+            <p style="margin-top: 8px">
+              Tous ces problèmes nécessitent de trouver des points proches
+              RAPIDEMENT, sinon l'application sera trop lente !
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 4: Approche naïve -->
+        <section>
+          <h2>🐌 Méthode Simple (la méthode "lente")</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>💡 L'idée la plus évidente :</strong>
+            </p>
+            <p style="margin-top: 10px">
+              Comparons TOUS les points entre eux, deux par deux, et gardons les
+              deux qui sont les plus proches !
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.9em">
+            <p>
+              <strong
+                >🎯 Comment ça fonctionne ? (Comme dans la vraie vie)</strong
+              >
+            </p>
+            <div
+              style="
+                margin-top: 12px;
+                background: var(--card);
+                padding: 12px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+              "
+            >
+              <p><strong>Étape 1 :</strong> Je prends le premier point</p>
+              <p style="margin-top: 8px">
+                <strong>Étape 2 :</strong> Je mesure sa distance avec TOUS les
+                autres points
+              </p>
+              <p style="margin-top: 8px">
+                <strong>Étape 3 :</strong> Je prends le deuxième point
+              </p>
+              <p style="margin-top: 8px">
+                <strong>Étape 4 :</strong> Je mesure sa distance avec tous les
+                points restants
+              </p>
+              <p style="margin-top: 8px">
+                <strong>Étape 5 :</strong> Je continue comme ça pour tous les
+                points...
+              </p>
+              <p style="margin-top: 8px">
+                <strong>Résultat :</strong> Je garde la plus petite distance
+                trouvée !
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--card);
+              padding: 15px;
+              border-radius: var(--radius);
+              border: 1px solid var(--border);
+            "
+          >
+            <p><strong>📊 Exemple concret avec 4 villes :</strong></p>
+            <div style="margin-top: 10px; font-size: 0.85em; line-height: 1.8">
+              <p>• Casablanca ↔ Marrakech : 240 km</p>
+              <p>• Casablanca ↔ Tanger : 340 km</p>
+              <p>• Casablanca ↔ Fès : 290 km</p>
+              <p>• Marrakech ↔ Tanger : 580 km</p>
+              <p>• Marrakech ↔ Fès : 390 km</p>
+              <p>
+                • Tanger ↔ Fès : 200 km ←
+                <span style="color: #22c55e; font-weight: bold"
+                  >LA PLUS PETITE ! ✓</span
+                >
+              </p>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px">
+            <div class="complexity">
+              ⏱️ Problème : Cette méthode est TRÈS LENTE !
+            </div>
+            <p style="font-size: 0.85em; margin-top: 12px">
+              <strong>Pourquoi ?</strong><br />
+              • Avec 100 villes → ~5,000 comparaisons à faire<br />
+              • Avec 1,000 villes → ~500,000 comparaisons !!<br />
+              • Avec 10,000 villes → ~50 MILLIONS de comparaisons !!!
+            </p>
+            <p
+              style="
+                margin-top: 10px;
+                color: var(--muted-foreground);
+                font-size: 0.8em;
+              "
+            >
+              💭 Il faut une méthode plus intelligente... C'est là qu'intervient
+              l'algorithme de Shamos !
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 5: L'algorithme de Shamos -->
+        <section>
+          <h2>🚀 La Méthode Intelligente de Shamos</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong
+                >Inventé en 1975 par Michael Ian Shamos et Dan Hoey</strong
+              >
+            </p>
+            <p style="margin-top: 10px">
+              Cette méthode est BEAUCOUP plus rapide que la méthode simple !
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.9em">
+            <p><strong>🎯 L'idée principale (en termes simples) :</strong></p>
+            <p style="margin-top: 10px; line-height: 1.7">
+              Au lieu de comparer TOUS les points avec TOUS les autres (ce qui
+              est très long), on va être plus malin !
+            </p>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--card);
+              padding: 15px;
+              border-radius: var(--radius);
+              border: 1px solid var(--border);
+            "
+          >
+            <p><strong>📚 Analogie du livre de téléphone :</strong></p>
+            <div style="margin-top: 10px; font-size: 0.85em; line-height: 1.7">
+              <p>
+                <strong>Question :</strong> Comment trouver "Omar Sarsar" dans
+                un annuaire de 1000 pages ?
+              </p>
+              <p style="margin-top: 10px">
+                <strong style="color: #ef4444">❌ Méthode lente :</strong> Lire
+                page par page depuis le début...
+              </p>
+              <p style="margin-top: 8px">
+                <strong style="color: #22c55e">✓ Méthode rapide :</strong>
+              </p>
+              <p style="margin-left: 15px; margin-top: 5px">
+                1. Ouvrir au milieu du livre
+              </p>
+              <p style="margin-left: 15px">
+                2. Si "Omar" est avant → chercher dans la moitié gauche
+              </p>
+              <p style="margin-left: 15px">
+                3. Si "Omar" est après → chercher dans la moitié droite
+              </p>
+              <p style="margin-left: 15px">4. Répéter jusqu'à trouver !</p>
+            </div>
+            <p style="margin-top: 12px; color: #22c55e; font-weight: bold">
+              → Shamos utilise la MÊME idée : diviser le problème en morceaux
+              plus petits !
+            </p>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--muted);
+              padding: 15px;
+              border-radius: var(--radius);
+            "
+          >
+            <p><strong>✨ Résultat :</strong></p>
+            <div style="margin-top: 10px; font-size: 0.85em">
+              <p>• Avec 1 million de points :</p>
+              <p style="margin-left: 15px; margin-top: 5px">
+                <span style="color: #ef4444">Méthode lente</span> : 500
+                milliards de comparaisons
+              </p>
+              <p style="margin-left: 15px">
+                <span style="color: #22c55e">Shamos</span> : seulement 20
+                millions de comparaisons
+              </p>
+              <p style="margin-top: 10px; font-weight: bold; color: #22c55e">
+                → Shamos est 25,000 fois plus rapide ! 🚀
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Slide 6: Principe général -->
+        <section>
+          <h2>📋 Comment fonctionne Shamos ? (Les 3 Étapes Simples)</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>La stratégie s'appelle "Diviser pour Régner"</strong>
+            </p>
+            <p style="margin-top: 10px">
+              Comme découper un gros problème en petits morceaux faciles à
+              résoudre !
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p
+                style="
+                  font-size: 1.1em;
+                  font-weight: bold;
+                  color: var(--primary);
+                "
+              >
+                Étape 1 : DIVISER 📏
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                <strong>Qu'est-ce qu'on fait ?</strong><br />
+                On trace une ligne imaginaire verticale au milieu de tous nos
+                points.
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                <strong>Résultat :</strong><br />
+                • Moitié gauche : 50% des points<br />
+                • Moitié droite : 50% des points
+              </p>
+              <p
+                style="
+                  margin-top: 10px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 <strong>Exemple avec des villes :</strong> Si vous avez 100
+                villes sur une carte du Maroc, vous tracez une ligne au milieu →
+                50 villes à l'Ouest, 50 à l'Est.
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p
+                style="
+                  font-size: 1.1em;
+                  font-weight: bold;
+                  color: var(--primary);
+                "
+              >
+                Étape 2 : RÉGNER (Résoudre chaque moitié) 🔄
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                <strong>Qu'est-ce qu'on fait ?</strong><br />
+                On résout le problème séparément pour chaque moitié.
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                • Côté gauche : On trouve les 2 villes les plus proches<br />
+                • Côté droit : On trouve les 2 villes les plus proches<br />
+                • On garde la plus petite des deux distances
+              </p>
+              <p
+                style="
+                  margin-top: 10px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 <strong>L'astuce :</strong> Au lieu de traiter 100 villes
+                ensemble (compliqué), on traite 2 groupes de 50 villes (plus
+                facile !). Et on répète cette division jusqu'à avoir des groupes
+                très petits
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+              "
+            >
+              <p style="font-size: 1.1em; font-weight: bold; color: #22c55e">
+                Étape 3 : COMBINER (Vérifier au milieu) 🔗
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                <strong>Problème :</strong> Et si les 2 villes les plus proches
+                sont de chaque côté de la ligne ?
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                <strong>Solution :</strong> On vérifie une "bande" autour de la
+                ligne du milieu.
+              </p>
+              <p
+                style="
+                  margin-top: 10px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                ✨ <strong>La magie :</strong> Grâce aux mathématiques, on peut
+                prouver qu'on n'a besoin de vérifier que très peu de points dans
+                cette bande (maximum 7 comparaisons par point) !
+              </p>
+            </div>
+          </div>
+
+          <div class="visual-diagram" style="margin-top: 20px">
+            <p style="font-size: 1.3em">
+              📍📍📍📍
+              <span style="color: #fbbf24; font-size: 1.2em">│</span>
+              📍📍📍📍<br />
+              <span style="color: var(--primary)">← Gauche</span>
+              <span style="color: #fbbf24">Ligne du milieu</span>
+              <span style="color: var(--primary)">Droite →</span>
+            </p>
+            <p style="margin-top: 15px; font-size: 0.85em">
+              Diviser → Résoudre chaque côté → Combiner les résultats
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 7: Étape 1 - Prétraitement -->
+        <section>
+          <h2>1️⃣ Étape de Préparation : Ranger les points</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>Avant de commencer, on doit ORGANISER nos points</strong>
+            </p>
+            <p style="margin-top: 10px">
+              Comme ranger des livres dans une bibliothèque pour les retrouver
+              plus vite !
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p><strong>💭 Pourquoi ranger/trier ?</strong></p>
+            <div
+              style="
+                background: var(--card);
+                padding: 12px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 10px;
+                line-height: 1.7;
+              "
+            >
+              <p>Imaginez que vous cherchez un nom dans un annuaire :</p>
+              <p style="margin-top: 8px">
+                • <strong style="color: #ef4444">Sans tri :</strong> Les noms
+                sont dans le désordre → Vous devez TOUT lire
+              </p>
+              <p style="margin-top: 8px">
+                • <strong style="color: #22c55e">Avec tri :</strong> Les noms
+                sont alphabétiques → Vous trouvez rapidement !
+              </p>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p>
+              <strong
+                >📋 On va trier nos points de DEUX manières différentes
+                :</strong
+              >
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+              "
+            >
+              <p
+                style="
+                  font-size: 1.05em;
+                  font-weight: bold;
+                  color: var(--primary);
+                "
+              >
+                1️⃣ Trier par position horizontale (X) :
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                <strong>C'est quoi ?</strong> On range les points de la gauche
+                vers la droite
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 <strong>Exemple avec des villes :</strong><br />
+                Casablanca (X=2), Rabat (X=4), Fès (X=6), Tanger (X=9)<br />
+                Après tri par X : Casablanca → Rabat → Fès → Tanger (de gauche à
+                droite)
+              </p>
+              <p style="margin-top: 10px">
+                <strong>Pourquoi ?</strong> Pour pouvoir tracer la ligne du
+                milieu facilement !
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+              "
+            >
+              <p
+                style="
+                  font-size: 1.05em;
+                  font-weight: bold;
+                  color: var(--primary);
+                "
+              >
+                2️⃣ Trier par position verticale (Y) :
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                <strong>C'est quoi ?</strong> On range les points du bas vers le
+                haut
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 <strong>Exemple avec des villes :</strong><br />
+                Casablanca (Y=3), Rabat (Y=5), Marrakech (Y=1), Tanger (Y=8)<br />
+                Après tri par Y : Marrakech → Casablanca → Rabat → Tanger (du
+                Sud vers le Nord)
+              </p>
+              <p style="margin-top: 10px">
+                <strong>Pourquoi ?</strong> Pour vérifier la bande du milieu
+                plus rapidement à l'étape 3 !
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--muted);
+              padding: 15px;
+              border-radius: var(--radius);
+            "
+          >
+            <p style="font-weight: bold">⚡ Point important :</p>
+            <p style="margin-top: 8px; line-height: 1.6">
+              On fait ce tri <strong>UNE SEULE FOIS</strong> au tout début.<br />
+              Après, on n'a plus besoin de re-trier !
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 8: Étape 2 - Diviser -->
+        <section>
+          <h2>2️⃣ Étape 2 : Diviser (En détail)</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>Objectif :</strong> Diviser l'ensemble en deux moitiés par
+              une ligne verticale
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.05em">
+              📋 Les étapes en pseudocode :
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 15px;
+                line-height: 1.8;
+              "
+            >
+              <p><strong>Étape 1 : Trouver le point du milieu</strong></p>
+              <p
+                style="
+                  margin-left: 15px;
+                  margin-top: 8px;
+                  font-family: monospace;
+                  color: #22c55e;
+                "
+              >
+                pointMilieu = Px[n/2]
+              </p>
+
+              <p style="margin-top: 15px">
+                <strong>Étape 2 : Diviser Px en deux groupes</strong>
+              </p>
+              <p
+                style="
+                  margin-left: 15px;
+                  margin-top: 8px;
+                  font-family: monospace;
+                  color: #22c55e;
+                "
+              >
+                PxGauche = première moitié de Px<br />
+                PxDroite = deuxième moitié de Px
+              </p>
+
+              <p style="margin-top: 15px">
+                <strong>Étape 3 : Diviser Py selon la position X</strong>
+              </p>
+              <p
+                style="
+                  margin-left: 15px;
+                  margin-top: 8px;
+                  font-family: monospace;
+                  color: #22c55e;
+                "
+              >
+                Pour chaque point dans Py :<br />
+                &nbsp;&nbsp;Si point.X ≤ pointMilieu.X → PyGauche<br />
+                &nbsp;&nbsp;Sinon → PyDroite
+              </p>
+
+              <p style="margin-top: 15px">
+                <strong>Étape 4 : Retourner les 4 groupes</strong>
+              </p>
+              <p
+                style="
+                  margin-left: 15px;
+                  margin-top: 8px;
+                  font-family: monospace;
+                  color: #22c55e;
+                "
+              >
+                Retourner: PxGauche, PxDroite, PyGauche, PyDroite
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--muted);
+              padding: 15px;
+              border-radius: var(--radius);
+            "
+          >
+            <p>
+              <strong>⏱️ Vitesse :</strong> O(n) - on parcourt chaque point une
+              fois
+            </p>
+            <p style="margin-top: 8px">
+              <strong>💡 Important :</strong> Les listes PyGauche et PyDroite
+              restent triées par Y
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 9: Étape 3 - Régner -->
+        <section>
+          <h2>3️⃣ Étape 3 : Régner (Résoudre récursivement)</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>Principe :</strong> Résoudre le problème pour chaque
+              moitié séparément, jusqu'à arriver à des groupes très petits
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.05em">
+              📋 L'algorithme en pseudocode :
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 15px;
+                line-height: 1.8;
+              "
+            >
+              <p style="font-family: monospace; color: #fbbf24">
+                <strong>Fonction</strong> TrouverPairePlusProche(Px, Py):
+              </p>
+
+              <p
+                style="
+                  margin-top: 12px;
+                  margin-left: 15px;
+                  font-family: monospace;
+                "
+              >
+                <strong style="color: var(--muted-foreground)"
+                  >// Cas de base : très peu de points</strong
+                ><br />
+                <span style="color: #22c55e">Si nombre_de_points ≤ 3:</span
+                ><br />
+                &nbsp;&nbsp;Comparer tous les points entre eux (rapide !)<br />
+                &nbsp;&nbsp;Retourner la plus petite distance
+              </p>
+
+              <p
+                style="
+                  margin-top: 15px;
+                  margin-left: 15px;
+                  font-family: monospace;
+                "
+              >
+                <strong style="color: var(--muted-foreground)"
+                  >// Diviser en deux groupes</strong
+                ><br />
+                <span style="color: #22c55e"
+                  >PxG, PxD, PyG, PyD = Diviser(Px, Py)</span
+                >
+              </p>
+
+              <p
+                style="
+                  margin-top: 15px;
+                  margin-left: 15px;
+                  font-family: monospace;
+                "
+              >
+                <strong style="color: var(--muted-foreground)"
+                  >// Résoudre récursivement (on se rappelle nous-mêmes
+                  !)</strong
+                ><br />
+                <span style="color: #22c55e"
+                  >distanceGauche = TrouverPairePlusProche(PxG, PyG)</span
+                ><br />
+                <span style="color: #22c55e"
+                  >distanceDroite = TrouverPairePlusProche(PxD, PyD)</span
+                >
+              </p>
+
+              <p
+                style="
+                  margin-top: 15px;
+                  margin-left: 15px;
+                  font-family: monospace;
+                "
+              >
+                <strong style="color: var(--muted-foreground)"
+                  >// Garder la plus petite distance</strong
+                ><br />
+                <span style="color: #22c55e"
+                  >δ = min(distanceGauche, distanceDroite)</span
+                >
+              </p>
+
+              <p
+                style="
+                  margin-top: 15px;
+                  margin-left: 15px;
+                  font-family: monospace;
+                "
+              >
+                <strong style="color: var(--muted-foreground)"
+                  >// Vérifier la bande du milieu</strong
+                ><br />
+                <span style="color: #22c55e"
+                  >Retourner Combiner(Px, Py, δ)</span
+                >
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--muted);
+              padding: 15px;
+              border-radius: var(--radius);
+            "
+          >
+            <p>
+              <strong>🔄 La récursion :</strong> La fonction s'appelle elle-même
+              sur des groupes plus petits
+            </p>
+            <p style="margin-top: 8px">
+              <strong>⚠️ Important :</strong> δ n'est pas forcément la réponse
+              finale ! Il faut vérifier la bande du milieu.
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 10: Étape 4 - Combiner (partie critique) -->
+        <section>
+          <h2>4️⃣ Étape Finale : Combiner et vérifier la bande du milieu</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>⚠️ Attention ! Il y a un piège...</strong>
+            </p>
+            <p style="margin-top: 10px">
+              Et si les 2 points les plus proches sont de chaque côté de la
+              ligne ? On risque de les rater !
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+              "
+            >
+              <p style="font-weight: bold; font-size: 1.05em">
+                💭 Le problème expliqué simplement :
+              </p>
+              <p style="margin-top: 10px; line-height: 1.7">
+                Imaginez que vous avez trouvé :<br />
+                • À gauche : les 2 villes les plus proches sont à 50 km<br />
+                • À droite : les 2 villes les plus proches sont à 60 km
+              </p>
+              <p style="margin-top: 10px; font-weight: bold; color: #fbbf24">
+                Mais attendez ! Et si une ville à l'Ouest et une ville à l'Est
+                sont à seulement 30 km l'une de l'autre ?
+              </p>
+              <p style="margin-top: 10px; color: #22c55e">
+                → Il faut vérifier les villes qui sont proches de la ligne du
+                milieu !
+              </p>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.05em">
+              ✨ La solution intelligente :
+            </p>
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 10px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>1. Créer une "bande" autour de la ligne :</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                On ne regarde QUE les points qui sont très proches de la ligne
+                du milieu.<br />
+                Si la plus petite distance trouvée est 50 km, on regarde une
+                bande de 50 km de chaque côté de la ligne.
+              </p>
+              <p style="margin-top: 12px">
+                <strong
+                  >2. Vérifier seulement les points dans cette bande :</strong
+                >
+              </p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                Au lieu de comparer TOUS les points à l'Ouest avec TOUS les
+                points à l'Est (très long),<br />
+                on ne compare que les points dans cette bande étroite.
+              </p>
+              <p
+                style="
+                  margin-top: 12px;
+                  background: var(--muted);
+                  padding: 10px;
+                  border-radius: 6px;
+                  color: #22c55e;
+                  font-weight: bold;
+                "
+              >
+                🎯 L'astuce magique : On peut mathématiquement prouver qu'on n'a
+                besoin de vérifier que 7 points au maximum pour chaque point !
+                (voir slide suivante)
+              </p>
+            </div>
+          </div>
+
+          <div class="visual-diagram" style="margin-top: 20px">
+            <p style="font-size: 1.1em; margin-bottom: 10px">
+              Visualisation de la bande :
+            </p>
+            <p style="font-size: 1.3em">
+              📍 📍 <span style="color: #fbbf24; font-weight: bold">│</span>
+              <span
+                style="background: rgba(255, 215, 0, 0.2); padding: 10px 15px"
+                >📍 📍 📍 📍</span
+              >
+              <span style="color: #fbbf24; font-weight: bold">│</span> 📍 📍<br />
+            </p>
+            <p style="font-size: 0.85em; margin-top: 10px">
+              <span style="color: var(--muted-foreground)"
+                >Points ignorés ←</span
+              >
+              <span
+                style="
+                  color: #fbbf24;
+                  background: rgba(255, 215, 0, 0.2);
+                  padding: 2px 8px;
+                "
+                >Bande vérifiée</span
+              >
+              <span style="color: var(--muted-foreground)"
+                >→ Points ignorés</span
+              >
+            </p>
+            <p style="font-size: 0.8em; margin-top: 12px">
+              On économise énormément de temps en ne vérifiant QUE cette bande !
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 11: Implémentation de Combiner -->
+        <section>
+          <h2>💻 Code : Phase Combiner</h2>
+
+          <div style="font-size: 0.85em; margin-bottom: 15px; line-height: 1.6">
+            <p><strong>Étapes de l'implémentation :</strong></p>
+            <ol style="margin-left: 20px; margin-top: 8px">
+              <li>
+                Construire la bande : filtrer les points à distance < δ de la
+                ligne médiane
+              </li>
+              <li>
+                Pour chaque point de la bande, vérifier au plus 7 points
+                suivants
+              </li>
+              <li>Retourner la distance minimale trouvée</li>
+            </ol>
+          </div>
+
+          <pre><code class="language-go" data-trim>
+func combiner(Px, Py []Point, d float64) float64 {
+    n := len(Px)
+    mid := n / 2
+    pointMedian := Px[mid]  // Point définissant la ligne médiane
+
+    // ÉTAPE 1: Créer la bande (points à distance < d de la ligne)
+    bande := []Point{}
+    for _, p := range Py {  // Parcourir dans l'ordre Y
+        if math.Abs(p.X-pointMedian.X) < d {  // Filtrer par distance à la ligne
+            bande = append(bande, p)
+        }
+    }
+
+    // ÉTAPE 2: Vérifier les paires dans la bande
+    minDist := d  // Commencer avec la meilleure distance connue
+    for i := 0; i < len(bande); i++ {
+        // Vérifier AU MAXIMUM 7 points suivants (géométriquement prouvé)
+        for j := i + 1; j < len(bande) && j < i+8; j++ {
+            dist := distance(bande[i], bande[j])
+            minDist = math.Min(dist, minDist)
+        }
+    }
+
+    return minDist  // Distance minimale finale
+}
+        </code></pre>
+
+          <div
+            style="
+              margin-top: 15px;
+              font-size: 0.82em;
+              background: var(--secondary);
+              padding: 12px;
+              border-radius: 8px;
+              border: 1px solid var(--border);
+            "
+          >
+            <p>
+              <strong>⏱️ Complexité :</strong> O(n) - au pire, tous les n points
+              sont dans la bande, et chacun vérifie au max 7 points → 7n
+              comparaisons = O(n)
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 12: Pourquoi seulement 7 points ? -->
+        <section>
+          <h2>🤔 La Magie des "7 Points Maximum"</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em"><strong>Question importante :</strong></p>
+            <p style="margin-top: 10px">
+              Pourquoi on dit qu'on n'a besoin de vérifier que 7 points maximum
+              ? C'est quoi cette magie ?
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.05em">
+              🎯 L'explication simple (avec un dessin mental) :
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>Étape 1 : Imaginez un rectangle 📐</strong></p>
+              <p style="margin-top: 10px; margin-left: 10px">
+                Pour chaque point (appelons-le "Point P"), on dessine un
+                rectangle autour de lui.<br />
+                <strong>Taille du rectangle :</strong> La largeur et hauteur
+                dépendent de la plus petite distance qu'on a déjà trouvée.
+              </p>
+              <p
+                style="
+                  margin-top: 10px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 Si la plus petite distance trouvée est 50 km, le rectangle
+                fait 100 km de large × 100 km de haut
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p>
+                <strong
+                  >Étape 2 : Diviser le rectangle en 8 petits carrés ✂️</strong
+                >
+              </p>
+              <p style="margin-top: 10px; margin-left: 10px">
+                On découpe ce rectangle en 8 carrés égaux :<br />
+                • 4 carrés à gauche de la ligne du milieu<br />
+                • 4 carrés à droite de la ligne du milieu
+              </p>
+              <p
+                style="
+                  margin-top: 10px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 Imaginez une tablette de chocolat avec 8 morceaux (4 à
+                gauche, 4 à droite)
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>Étape 3 : La règle magique des carrés 🎩✨</strong></p>
+              <p
+                style="
+                  margin-top: 10px;
+                  margin-left: 10px;
+                  font-weight: bold;
+                  color: #fbbf24;
+                "
+              >
+                Dans chaque petit carré, il peut y avoir AU MAXIMUM 1 seul point
+                !
+              </p>
+              <p style="margin-top: 10px; margin-left: 10px">
+                <strong>Pourquoi ?</strong><br />
+                Si 2 points étaient dans le même petit carré, ils seraient très
+                proches l'un de l'autre (plus proches que 50 km dans notre
+                exemple).<br />
+                Mais si c'était le cas, on les aurait déjà trouvés avant !
+              </p>
+              <p
+                style="
+                  margin-top: 10px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 C'est comme si on avait déjà vérifié tous les points très
+                proches. Les carrés garantissent qu'ils sont assez espacés.
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p style="font-weight: bold; color: #22c55e; font-size: 1.05em">
+                Étape 4 : Compter les points 🔢
+              </p>
+              <p style="margin-top: 10px; margin-left: 10px">
+                • 8 carrés au total<br />
+                • Maximum 1 point par carré = Maximum 8 points<br />
+                • Mais un de ces 8 points est notre "Point P" lui-même<br />
+                • Donc il reste
+                <strong style="color: #22c55e"
+                  >7 autres points à vérifier !</strong
+                >
+              </p>
+            </div>
+          </div>
+
+          <div class="visual-diagram" style="margin-top: 20px">
+            <p style="font-size: 0.9em; margin-bottom: 10px">
+              Vue du rectangle divisé en 8 carrés :
+            </p>
+            <div style="font-size: 1.1em; font-family: monospace">
+              <div>┌─────┬─────┐│─────┬─────┐</div>
+              <div>│ □ │ □ ││ □ │ □ │ ← 4 carrés en haut</div>
+              <div>├─────┼─────┤│─────┼─────┤</div>
+              <div>│ □ │ ⭐ ││ □ │ □ │ ← 4 carrés en bas (⭐ = Point P)</div>
+              <div>└─────┴─────┘│─────┴─────┘</div>
+              <div style="margin-top: 5px; font-size: 0.85em">Ouest │ Est</div>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.85em; color: #fbbf24">
+              ✨ Maximum 1 point par carré (□) → 7 points à vérifier + Point P =
+              8 points total
+            </p>
+            <p style="margin-top: 8px; font-size: 0.85em; color: #22c55e">
+              C'est cette limite de 7 qui rend l'algorithme super rapide ! 🚀
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 13: Pseudocode complet -->
+        <section>
+          <h2>📝 Algorithme Complet - Vue d'Ensemble</h2>
+
+          <div style="font-size: 0.8em; margin-bottom: 8px; line-height: 1.4">
+            <p><strong>🎯 Structure :</strong> Deux fonctions principales</p>
+            <p style="margin-left: 15px; margin-top: 5px; font-size: 0.95em">
+              1. <strong>pairePlusProche</strong> - Trie puis appelle la version
+              récursive<br />
+              2. <strong>pairePlusProcheRec</strong> - Divise, régit, et combine
+            </p>
+          </div>
+
+          <pre style="margin-top: 8px"><code class="language-go" data-trim>
+func pairePlusProche(points []Point) float64 {
+    // ÉTAPE 0: Prétraitement - Trier selon X et Y
+    // Complexité: O(n log n) - fait UNE SEULE FOIS
+    Px := make([]Point, len(points))
+    Py := make([]Point, len(points))
+    copy(Px, points)
+    copy(Py, points)
+
+    sort.Slice(Px, func(i, j int) bool { return Px[i].X < Px[j].X })
+    sort.Slice(Py, func(i, j int) bool { return Py[i].Y < Py[j].Y })
+
+    return pairePlusProcheRec(Px, Py)  // Lancer la récursion
+}
+
+func pairePlusProcheRec(Px, Py []Point) float64 {
+    n := len(Px)
+
+    // CAS DE BASE: n ≤ 3 → Force brute (trivial)
+    if n <= 3 {
+        return forceBrute(Px)  // O(1) car au max 3 comparaisons
+    }
+
+    // ÉTAPE 1: DIVISER l'espace en deux moitiés
+    // Complexité: O(n)
+    mid := n / 2
+    PxG, PxD, PyG, PyD := diviser(Px, Py, mid)
+
+    // ÉTAPE 2: RÉGNER - Résoudre récursivement
+    // Complexité: 2T(n/2)
+    dG := pairePlusProcheRec(PxG, PyG)  // Distance min à l'Ouest
+    dD := pairePlusProcheRec(PxD, PyD)  // Distance min à l'Est
+
+    // ÉTAPE 3: COMBINER - Vérifier la bande médiane
+    // Complexité: O(n)
+    d := math.Min(dG, dD)
+    return combinerAvecBande(Px, Py, d, mid)
+}
+        </code></pre>
+
+          <div
+            style="
+              margin-top: 8px;
+              font-size: 0.75em;
+              background: var(--secondary);
+              padding: 10px;
+              border-radius: 6px;
+              border: 1px solid var(--border);
+            "
+          >
+            <p>
+              <strong>📊 Équation :</strong> T(n) = 2T(n/2) + O(n) →
+              <strong>Résultat :</strong> T(n) = O(n log n)
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 14: Analyse de complexité -->
+        <section>
+          <h2>⏱️ Pourquoi c'est rapide ? (La vitesse de l'algorithme)</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong>On va compter combien d'opérations on fait</strong>
+            </p>
+            <p style="margin-top: 10px">
+              Plus il y a d'opérations, plus c'est lent. Moins il y en a, plus
+              c'est rapide !
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.05em">
+              🔍 Décomposons le travail que fait l'algorithme :
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>1️⃣ Au début : Trier les points</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                On range nos n points par ordre (gauche→droite et bas→haut)<br />
+                <strong>Travail :</strong> proportionnel à "n × log(n)"
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 Pour 1000 points : environ 1000 × 10 = 10,000 opérations
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>2️⃣ Diviser les points en deux groupes</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                On sépare nos points en deux zones<br />
+                <strong>Travail :</strong> proportionnel à "n" (parcourir chaque
+                point une fois)
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>3️⃣ Résoudre les deux moitiés (récursion)</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                On résout le problème pour chaque moitié → et chaque moitié se
+                divise encore...<br />
+                On continue jusqu'à avoir des groupes très petits (2-3 points)
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 C'est comme diviser un mssemen en 2, puis chaque moitié en 2,
+                etc.
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>4️⃣ Combiner : Vérifier la bande du milieu</strong></p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                On vérifie les points près de la ligne (max 7 comparaisons par
+                point)<br />
+                <strong>Travail :</strong> proportionnel à "n"
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: #22c55e;
+              color: #000;
+              padding: 20px;
+              border-radius: var(--radius);
+              text-align: center;
+            "
+          >
+            <p style="font-size: 1.1em; font-weight: bold">
+              ✅ RÉSULTAT FINAL :
+            </p>
+            <p style="font-size: 1.5em; font-weight: bold; margin-top: 10px">
+              O(n log n) opérations
+            </p>
+            <p style="margin-top: 10px; font-size: 0.95em">
+              Cela signifie : Si vous doublez le nombre de points,<br />
+              le temps de calcul augmente un peu plus que le double, mais PAS 4
+              fois plus !
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 15: Théorème Master -->
+        <section>
+          <h2>📐 Comment on prouve que c'est rapide ? (Pour les curieux)</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong
+                >Il existe une formule mathématique pour calculer la
+                vitesse</strong
+              >
+            </p>
+            <p style="margin-top: 10px">
+              Elle s'appelle le "Théorème Master" (un outil pour les
+              informaticiens)
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.05em">
+              🧮 L'idée simple (sans entrer dans les détails mathématiques) :
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>Le Théorème Master dit :</strong></p>
+              <p style="margin-top: 10px; margin-left: 10px">
+                "Si tu divises ton problème en 2 parties égales à chaque
+                fois...<br />
+                et que le travail pour diviser + combiner est proportionnel à
+                n...<br />
+                alors la vitesse totale sera O(n log n)"
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong>Dans notre algorithme de Shamos :</strong></p>
+              <p style="margin-top: 10px; margin-left: 10px">
+                ✓ On divise en 2 parties égales ?
+                <strong style="color: #22c55e">OUI</strong> (Ouest et Est)<br />
+                ✓ Le travail de division/combinaison est proportionnel à n ?
+                <strong style="color: #22c55e">OUI</strong><br />
+                → Donc la formule nous donne :
+                <strong style="color: #22c55e">O(n log n)</strong> ✅
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: var(--muted);
+              padding: 15px;
+              border-radius: var(--radius);
+            "
+          >
+            <p style="font-weight: bold">
+              💡 En résumé (pas besoin de retenir les maths) :
+            </p>
+            <p style="margin-top: 10px; line-height: 1.6">
+              • Les mathématiciens ont prouvé que cette méthode "Diviser pour
+              Régner" est très efficace<br />
+              • Notre algorithme suit exactement ce modèle<br />
+              • Donc on est sûr qu'il est rapide :
+              <strong>O(n log n)</strong> ✅
+            </p>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              text-align: center;
+              padding: 15px;
+              background: rgba(34, 197, 94, 0.1);
+              border-radius: var(--radius);
+              border: 1px solid #22c55e;
+            "
+          >
+            <p style="font-size: 0.9em; color: var(--muted-foreground)">
+              📚 Note : Le Théorème Master est un outil avancé que vous
+              étudierez en détail dans des cours plus avancés d'algorithmique
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 16: Comparaison -->
+        <section>
+          <h2>⚖️ Méthode Lente vs Méthode Rapide : Le Match !</h2>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <div
+              style="
+                background: var(--card);
+                padding: 20px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+              "
+            >
+              <table style="width: 100%; border-collapse: collapse">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--border)">
+                    <th
+                      style="padding: 15px; text-align: left; font-size: 1.1em"
+                    >
+                      Méthode
+                    </th>
+                    <th
+                      style="
+                        padding: 15px;
+                        text-align: center;
+                        font-size: 1.1em;
+                      "
+                    >
+                      Vitesse
+                    </th>
+                    <th
+                      style="
+                        padding: 15px;
+                        text-align: center;
+                        font-size: 1.1em;
+                      "
+                    >
+                      Mémoire utilisée
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom: 1px solid var(--border)">
+                    <td style="padding: 15px">
+                      <strong style="color: #ef4444">🐌 Méthode Lente</strong
+                      ><br />
+                      <span style="font-size: 0.9em">(Force Brute)</span>
+                    </td>
+                    <td style="padding: 15px; text-align: center">
+                      <span style="color: #ef4444; font-weight: bold"
+                        >O(n²)</span
+                      ><br />
+                      <span style="font-size: 0.85em">Très lent</span>
+                    </td>
+                    <td style="padding: 15px; text-align: center">
+                      <span style="color: #22c55e">Très peu</span><br />
+                      <span style="font-size: 0.85em">O(1)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 15px">
+                      <strong style="color: #22c55e">🚀 Shamos</strong><br />
+                      <span style="font-size: 0.9em"
+                        >(Diviser pour Régner)</span
+                      >
+                    </td>
+                    <td style="padding: 15px; text-align: center">
+                      <span style="color: #22c55e; font-weight: bold"
+                        >O(n log n)</span
+                      ><br />
+                      <span style="font-size: 0.85em">Très rapide !</span>
+                    </td>
+                    <td style="padding: 15px; text-align: center">
+                      <span style="color: #fbbf24">Modérée</span><br />
+                      <span style="font-size: 0.85em">O(n)</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="margin-top: 25px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.1em; color: #fbbf24">
+              📊 Exemple Concret : Comparons avec des VRAIS chiffres !
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-top: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p>
+                <strong
+                  >Scénario : Vous avez 10,000 villes sur une carte du
+                  Maroc</strong
+                >
+              </p>
+
+              <div
+                style="
+                  margin-top: 15px;
+                  background: rgba(239, 68, 68, 0.1);
+                  padding: 12px;
+                  border-radius: 6px;
+                  border-left: 3px solid #ef4444;
+                "
+              >
+                <p>
+                  <strong style="color: #ef4444"
+                    >🐌 Méthode Lente (Force Brute) :</strong
+                  >
+                </p>
+                <p style="margin-top: 8px; margin-left: 10px">
+                  → Environ <strong>50 MILLIONS</strong> de comparaisons à
+                  faire<br />
+                  → Temps estimé :
+                  <strong>plusieurs secondes à minutes</strong> ⏱️
+                </p>
+              </div>
+
+              <div
+                style="
+                  margin-top: 12px;
+                  background: rgba(34, 197, 94, 0.1);
+                  padding: 12px;
+                  border-radius: 6px;
+                  border-left: 3px solid #22c55e;
+                "
+              >
+                <p><strong style="color: #22c55e">🚀 Shamos :</strong></p>
+                <p style="margin-top: 8px; margin-left: 10px">
+                  → Environ <strong>130,000</strong> opérations seulement !<br />
+                  → Temps estimé : <strong>quelques millisecondes</strong> ⚡
+                </p>
+              </div>
+            </div>
+
+            <div
+              style="
+                margin-top: 20px;
+                background: #22c55e;
+                color: #000;
+                padding: 20px;
+                border-radius: var(--radius);
+                text-align: center;
+              "
+            >
+              <p style="font-size: 1.2em; font-weight: bold">
+                🏆 Shamos est environ 400× PLUS RAPIDE !
+              </p>
+              <p style="margin-top: 10px; font-size: 0.9em">
+                (Et pour 100,000 points, ce serait 5,900× plus rapide !)
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Slide 17: Avantages et Limitations -->
+        <section>
+          <h2>✅ Les Points Forts & ⚠️ Les Limites</h2>
+
+          <div style="margin-top: 20px; font-size: 0.85em">
+            <div
+              style="
+                background: rgba(34, 197, 94, 0.1);
+                padding: 20px;
+                border-radius: var(--radius);
+                border: 1px solid #22c55e;
+                margin-bottom: 20px;
+              "
+            >
+              <h3 style="color: #22c55e; font-size: 1.2em; margin-bottom: 15px">
+                ✅ Les Points Forts de Shamos :
+              </h3>
+              <div style="line-height: 1.8">
+                <p>
+                  <strong>1. Extrêmement rapide pour beaucoup de points</strong>
+                </p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → Plus vous avez de points, plus l'avantage est énorme !
+                </p>
+
+                <p style="margin-top: 12px">
+                  <strong>2. Peut traiter des millions de points</strong>
+                </p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → La méthode lente serait impossible, Shamos le fait en
+                  quelques secondes
+                </p>
+
+                <p style="margin-top: 12px">
+                  <strong>3. Pas trop compliqué à programmer</strong>
+                </p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → Une fois qu'on comprend l'idée, le code n'est pas si
+                  difficile
+                </p>
+
+                <p style="margin-top: 12px">
+                  <strong>4. Élégant mathématiquement</strong>
+                </p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → Bel exemple de comment les maths rendent les programmes
+                  rapides
+                </p>
+              </div>
+            </div>
+
+            <div
+              style="
+                background: rgba(239, 68, 68, 0.1);
+                padding: 20px;
+                border-radius: var(--radius);
+                border: 1px solid #ef4444;
+              "
+            >
+              <h3 style="color: #ef4444; font-size: 1.2em; margin-bottom: 15px">
+                ⚠️ Les Limites de Shamos :
+              </h3>
+              <div style="line-height: 1.8">
+                <p><strong>1. Utilise plus de mémoire</strong></p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → Il faut garder des copies des points en mémoire (pas énorme,
+                  mais plus que la méthode lente)
+                </p>
+
+                <p style="margin-top: 12px">
+                  <strong
+                    >2. Pas toujours meilleur pour TRÈS peu de points</strong
+                  >
+                </p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → Pour 10 ou 20 points, la méthode simple peut être aussi
+                  rapide (et plus simple !)
+                </p>
+
+                <p style="margin-top: 12px">
+                  <strong>3. Plus compliqué à comprendre</strong>
+                </p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → La méthode lente est intuitive, Shamos nécessite de la
+                  réflexion
+                </p>
+
+                <p style="margin-top: 12px">
+                  <strong>4. Difficile à adapter en 3D</strong>
+                </p>
+                <p style="margin-left: 15px; margin-top: 5px">
+                  → Ça marche super en 2D, mais en 3D ça devient plus compliqué
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="highlight-box" style="margin-top: 25px">
+            <p style="font-size: 1em"><strong>💡 Conseil pratique :</strong></p>
+            <p style="margin-top: 10px">
+              • Moins de 50 points ? → Utilisez la méthode simple (force
+              brute)<br />
+              • Plus de 100 points ? → Shamos est le champion ! 🏆
+            </p>
+          </div>
+        </section>
+
+        <!-- Slide 18: Extensions et Variantes -->
+        <section>
+          <h2>🔄 On peut aller plus loin !</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1em">
+              <strong
+                >L'algorithme de Shamos peut être adapté et amélioré</strong
+              >
+            </p>
+            <p style="margin-top: 10px">
+              Voici quelques variations intéressantes
+            </p>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 0.85em; line-height: 1.8">
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p style="font-weight: bold; color: var(--primary)">
+                1. Version 3D (trois dimensions)
+              </p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                <strong>Idée :</strong> Au lieu de points sur une carte (2D),
+                imaginez des points dans l'espace (comme des étoiles)<br />
+                <strong>Résultat :</strong> Ça marche aussi ! Mais c'est un peu
+                plus lent : O(n log² n) au lieu de O(n log n)
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 Utile pour l'astronomie, les molécules en chimie, etc.
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p style="font-weight: bold; color: var(--primary)">
+                2. Trouver les k paires les plus proches
+              </p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                <strong>Idée :</strong> Au lieu de trouver UNE paire, trouvez
+                les 10 paires les plus proches<br />
+                <strong>Résultat :</strong> On peut modifier l'algorithme pour
+                faire ça aussi !
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 Utile pour les recommandations ("les 10 clients les plus
+                similaires")
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 15px;
+              "
+            >
+              <p style="font-weight: bold; color: var(--primary)">
+                3. Autres types de distances
+              </p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                <strong>Idée :</strong> Au lieu de la distance "en ligne
+                droite", on peut utiliser d'autres mesures<br />
+                <strong>Exemple :</strong> Distance Manhattan (comme marcher
+                dans une ville avec des blocs)
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 Utile pour les GPS (distance par les routes, pas à vol
+                d'oiseau)
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+              "
+            >
+              <p style="font-weight: bold; color: var(--primary)">
+                4. Version parallèle (utiliser plusieurs processeurs)
+              </p>
+              <p style="margin-top: 8px; margin-left: 10px">
+                <strong>Idée :</strong> Les deux moitiés (Ouest et Est) sont
+                indépendantes<br />
+                <strong>Résultat :</strong> On peut les calculer en même temps
+                sur 2 processeurs → Encore plus rapide !
+              </p>
+              <p
+                style="
+                  margin-top: 8px;
+                  background: var(--muted);
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                💡 Utile pour les super-ordinateurs et les serveurs
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Slide 19: Exemple visuel simple -->
+        <section>
+          <h2>🎨 Exemple Visuel</h2>
+
+          <div style="text-align: center">
+            <div class="visual-diagram">
+              <p style="font-size: 1.1em; margin-bottom: 20px">
+                Ensemble initial de points (Villes du Maroc) :
+              </p>
+              <p style="font-size: 2em; letter-spacing: 15px">
+                📍 📍 📍 📍 📍 📍
+              </p>
+            </div>
+
+            <div class="visual-diagram fragment" style="margin-top: 20px">
+              <p style="font-size: 1.1em; margin-bottom: 20px">
+                Division (Séparation Est/Ouest) :
+              </p>
+              <p style="font-size: 2em">
+                📍 📍 📍 <span style="color: #fbbf24">│</span> 📍 📍 📍
+              </p>
+            </div>
+
+            <div class="visual-diagram fragment" style="margin-top: 20px">
+              <p style="font-size: 1.1em; margin-bottom: 20px">
+                Bande de recherche médiane :
+              </p>
+              <p style="font-size: 2em">
+                📍
+                <span style="background: rgba(255, 215, 0, 0.2); padding: 10px"
+                  >📍 📍 📍</span
+                >
+                📍 📍
+              </p>
+            </div>
+
+            <div class="fragment" style="margin-top: 30px">
+              <p style="font-size: 1.2em; color: #86efac">
+                ✅ Paire la plus proche trouvée !
+              </p>
+              <p style="font-size: 2em">
+                📍
+                <span style="color: #86efac; font-size: 1.5em">📍━━━📍</span> 📍
+                📍 📍
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Slide 20: Conclusion -->
+        <section>
+          <h2>🎯 Ce qu'il faut retenir</h2>
+
+          <div class="highlight-box">
+            <p style="font-size: 1.1em">
+              <strong>L'algorithme de Shamos</strong> est un bel exemple de
+              comment être intelligent peut rendre un programme BEAUCOUP plus
+              rapide !
+            </p>
+          </div>
+
+          <div style="margin-top: 25px; font-size: 0.85em">
+            <p style="font-weight: bold; font-size: 1.1em; margin-bottom: 15px">
+              📝 Les points essentiels à retenir :
+            </p>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p><strong style="color: #22c55e">1. Le problème :</strong></p>
+              <p style="margin-left: 15px; margin-top: 5px">
+                Trouver les 2 points les plus proches parmi n points
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p>
+                <strong style="color: #22c55e"
+                  >2. La méthode simple (lente) :</strong
+                >
+              </p>
+              <p style="margin-left: 15px; margin-top: 5px">
+                Comparer tous les points entre eux → O(n²) opérations → Très
+                lent pour beaucoup de points
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p>
+                <strong style="color: #22c55e"
+                  >3. La méthode de Shamos (rapide) :</strong
+                >
+              </p>
+              <p style="margin-left: 15px; margin-top: 5px">
+                • Diviser les points en deux groupes<br />
+                • Résoudre pour chaque groupe séparément<br />
+                • Vérifier uniquement la bande du milieu (max 7 comparaisons par
+                point)<br />
+                → O(n log n) opérations → Peut être 1000× plus rapide ! 🚀
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 12px;
+                line-height: 1.7;
+              "
+            >
+              <p>
+                <strong style="color: #22c55e">4. L'astuce magique :</strong>
+              </p>
+              <p style="margin-left: 15px; margin-top: 5px">
+                La limite des 7 points (grâce aux mathématiques) rend tout
+                l'algorithme super rapide ✨
+              </p>
+            </div>
+
+            <div
+              style="
+                background: var(--card);
+                padding: 15px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                line-height: 1.7;
+              "
+            >
+              <p>
+                <strong style="color: #22c55e">5. Utilisé partout :</strong>
+              </p>
+              <p style="margin-left: 15px; margin-top: 5px">
+                Jeux vidéo, GPS, contrôle aérien, recommandations en ligne, etc.
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 30px;
+              background: var(--card);
+              border: 1px solid var(--border);
+              padding: 40px;
+              border-radius: var(--radius);
+              text-align: center;
+            "
+          >
+            <p
+              style="
+                font-size: 1.8em;
+                font-weight: bold;
+                color: var(--foreground);
+                margin-bottom: 20px;
+              "
+            >
+              Merci pour votre attention ! 🙏
+            </p>
+            <p
+              style="
+                font-size: 1.2em;
+                color: var(--muted-foreground);
+                margin-bottom: 30px;
+              "
+            >
+              Des questions ? 💬
+            </p>
+            <div
+              style="
+                border-top: 1px solid var(--border);
+                padding-top: 20px;
+                margin-top: 20px;
+              "
+            >
+              <p style="font-size: 0.95em; color: var(--foreground)">
+                Présenté par <strong>Omar Sarsar</strong>
+              </p>
+              <p
+                style="
+                  font-size: 0.85em;
+                  color: var(--muted-foreground);
+                  margin-top: 5px;
+                "
+              >
+                Cours : Algorithmes et Structures de Données
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Slide 21: Références -->
+        <section>
+          <h2>📚 Références</h2>
+
+          <ul style="line-height: 2; font-size: 0.85em">
+            <li>
+              Shamos, M. I. (1975). <em>Computational Geometry</em>. PhD thesis,
+              Yale University.
+            </li>
+            <li style="margin-top: 20px">
+              Cormen, T. H., et al. (2009).
+              <em>Introduction to Algorithms</em> (3rd ed.). MIT Press.
+            </li>
+            <li style="margin-top: 20px">
+              Preparata, F. P., & Shamos, M. I. (1985).
+              <em>Computational Geometry: An Introduction</em>. Springer-Verlag.
+            </li>
+            <li style="margin-top: 20px">
+              de Berg, M., et al. (2008).
+              <em>Computational Geometry: Algorithms and Applications</em> (3rd
+              ed.). Springer-Verlag.
+            </li>
+          </ul>
+
+          <div
+            style="
+              margin-top: 50px;
+              text-align: center;
+              color: var(--muted-foreground);
+            "
+          >
+            <p>
+              Présenté par :
+              <strong style="color: var(--foreground)">Omar Sarsar</strong>
+            </p>
+            <p style="margin-top: 10px">
+              Cours : Algorithmes et Structures de Données
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- reveal.js JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/notes/notes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/zoom/zoom.js"></script>
+
+    <script>
+      Reveal.initialize({
+        hash: true,
+        center: false,
+        transition: "fade",
+        transitionSpeed: "fast",
+        backgroundTransition: "none",
+        slideNumber: "c/t",
+        showSlideNumber: "all",
+        controls: true,
+        progress: true,
+        history: true,
+        keyboard: true,
+        overview: true,
+        touch: true,
+        loop: false,
+        rtl: false,
+        fragments: true,
+        embedded: false,
+        help: true,
+        hideAddressBar: true,
+        previewLinks: false,
+        width: 1920,
+        height: 1080,
+        margin: 0.01,
+        minScale: 0.2,
+        maxScale: 3.0,
+        display: "block",
+        pdfSeparateFragments: false,
+        plugins: [RevealMarkdown, RevealHighlight, RevealNotes, RevealZoom],
+      });
+
+      console.log("📊 Présentation sur l'Algorithme de Shamos");
+      console.log("🎯 Navigation: Flèches, Espace, ou S pour aperçu");
+      console.log("💡 Appuyez sur ? pour l'aide");
+    </script>
+  </body>
+</html>
